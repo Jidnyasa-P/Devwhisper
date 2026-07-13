@@ -6,7 +6,7 @@ import json
 
 app = FastAPI()
 
-# 🔥 Memory store
+# Memory store
 conversation_history = []
 
 
@@ -17,7 +17,6 @@ async def startup_event():
 
 
 def update_memory(user, assistant):
-    global conversation_history
     conversation_history.append(f"User: {user}\nAssistant: {assistant}")
     if len(conversation_history) > 5:
         conversation_history.pop(0)
@@ -27,7 +26,7 @@ def get_memory():
     return "\n\n".join(conversation_history)
 
 
-# ✅ FIX: root route to prevent 502
+# FIX: root route to prevent 502
 @app.post("/")
 async def root():
     return {"status": "ok"}
@@ -66,7 +65,7 @@ async def vapi_webhook(request: Request):
                 }
             })
 
-        # 🔥 Handle BOTH function-call and tool-calls
+        #  Handle BOTH function-call and tool-calls
         if msg_type in ["function-call", "tool-calls"]:
 
             tools = []
@@ -85,7 +84,7 @@ async def vapi_webhook(request: Request):
                 fn = tool.get("function", {})
                 fn_name = fn.get("name", "")
 
-                # 🔥 FIX: handle string JSON params
+                # FIX: handle string JSON params
                 params = fn.get("arguments") or fn.get("parameters") or {}
                 if isinstance(params, str):
                     try:
