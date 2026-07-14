@@ -86,14 +86,28 @@ async def vapi_webhook(request: Request):
 
                 # FIX: handle string JSON params
                 params = fn.get("arguments") or fn.get("parameters") or {}
+                
                 if isinstance(params, str):
                     try:
                         params = json.loads(params)
-                    except:
-                        params = {}
+                    except json.JSONDecodeError as e:
+                        print(f"Failed to parse command parameters: {e}")
+                        return JSONResponse(
+                            status_code=400,
+                            content={
+  "status": "error",
+  "message": "Sorry, I didn't understand that command. Try rephrasing."
+})
 
                 if fn_name == "query_codebase":
                     query = params.get("query", "")
+                    if not query:
+                        return JSONResponse(
+                            status_code=400,
+                            content={
+    "status": "error",
+    "message": "Sorry, I didn't understand that command. Try rephrasing."
+})
 
                     context = retrieve(query)
                     print("CONTEXT:", context)
@@ -114,9 +128,11 @@ async def vapi_webhook(request: Request):
 
     except Exception as e:
         print("SERVER ERROR:", e)
-        return JSONResponse({
-            "error": "Internal server error",
-            "details": str(e)
+        return JSONResponse(
+            status_code=500,
+            content={
+            "status": "error",
+            "message": "An unexpected error occurred."
         })
 
 
