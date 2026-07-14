@@ -140,7 +140,14 @@ GROQ\_API\_KEY=your\_groq\_api\_key
 
 8. Update Vapi tool Server URL with your ngrok URL plus `/webhook`
 
+---
 
+## 🐳 Run with Docker
+
+1. Build the Docker image: `docker build -t devwhisper .`
+2. Create a `.env` file with your API keys (same as above).
+3. Run the container: `docker run -p 8000:8000 --env-file .env devwhisper`
+4. Expose publicly using ngrok and update your Vapi tool Server URL.
 
 ---
 
