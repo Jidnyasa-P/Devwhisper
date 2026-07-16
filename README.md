@@ -118,17 +118,7 @@ Developer hears the response
 
 2. Install dependencies: `pip install -r requirements.txt`
 
-3. Create a `.env` file in the root folder:
-
-
-
-QDRANT\_URL=your\_qdrant\_cluster\_url
-
-QDRANT\_API\_KEY=your\_qdrant\_api\_key
-
-GROQ\_API\_KEY=your\_groq\_api\_key
-
-
+3. Create a `.env` file in the root folder:`cp ./.env.example ./.env`
 
 4. Add your Python files to the `sample\_codebase` folder
 

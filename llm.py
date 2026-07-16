@@ -1,16 +1,45 @@
 import os
-import requests
+from openai import OpenAI
 from dotenv import load_dotenv
 
 load_dotenv()
 
 
-def generate_response(user_query: str, context: str, history: str = "") -> str:
-    headers = {
-        "Authorization": f"Bearer {os.getenv('GROQ_API_KEY')}",
-        "Content-Type": "application/json"
-    }
+def _get_client() -> OpenAI:
+    """Create an OpenAI-compatible client based on the configured provider."""
+    provider = os.getenv("LLM_API_KEY")
 
+    if provider is None:
+        return OpenAI(
+            api_key=os.getenv("GROQ_API_KEY"),
+            base_url="https://api.groq.com/openai/v1",
+        )
+
+    # openai_compatible — DeepSeek, etc.
+    return OpenAI(
+        api_key=os.getenv("LLM_API_KEY") or os.getenv("GROQ_API_KEY"),
+        base_url=os.getenv("LLM_BASE_URL", "https://api.groq.com/openai/v1"),
+    )
+
+
+def _get_model() -> str:
+    """Return the model name for the configured provider.
+
+    The default model depends on which provider is active,
+    detected the same way as _get_client() — by checking LLM_API_KEY.
+    """
+    explicit = os.getenv("LLM_MODEL")
+    if explicit:
+        return explicit
+
+    # No LLM_API_KEY → Groq mode (backward compatible)
+    if os.getenv("LLM_API_KEY") is None:
+        return "llama-3.3-70b-versatile"
+
+    return "deepseek-v4-flash"
+
+
+def generate_response(user_query: str, context: str, history: str = "") -> str:
     system_prompt = """
 You are DevWhisper, a strict codebase analysis assistant.
 
@@ -43,19 +72,20 @@ STYLE:
 • Short and voice-friendly
 """
 
-    body = {
-        "model": "llama-3.3-70b-versatile",
-        "messages": [
-            {
-                "role": "system",
-                "content": system_prompt
-            },
-            {
-                "role": "user",
-                "content": f"""
-Conversation history:
-{history if history else "No prior conversation."}
+    try:
+        client = _get_client()
+        model = _get_model()
 
+        response = client.chat.completions.create(
+            model=model,
+            messages=[
+                {
+                    "role": "system",
+                    "content": system_prompt
+                },
+                {
+                    "role": "user",
+                    "content": f"""
 User question:
 {user_query}
 
@@ -67,23 +97,14 @@ INSTRUCTIONS:
 - Do NOT add explanation unless asked
 - Keep output clean and structured
 """
-            }
-        ]
-    }
-
-    try:
-        resp = requests.post(
-            "https://api.groq.com/openai/v1/chat/completions",
-            headers=headers,
-            json=body
+                }
+            ]
         )
 
-        data = resp.json()
-
-        if "choices" in data and len(data["choices"]) > 0:
-            return data["choices"][0]["message"]["content"]
+        if response.choices and len(response.choices) > 0:
+            return response.choices[0].message.content
         else:
-            print("Unexpected response:", data)
+            print("Unexpected response:", response)
             return "I could not process the response."
 
     except Exception as e:
