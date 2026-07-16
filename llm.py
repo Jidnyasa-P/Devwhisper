@@ -1,42 +1,42 @@
 import os
-from openai import OpenAI
-from dotenv import load_dotenv
 
-load_dotenv()
+from openai import OpenAI
+
+from config import (
+    DEFAULT_GROQ_MODEL,
+    DEFAULT_LLM_BASE_URL,
+    DEFAULT_OPENAI_COMPATIBLE_MODEL,
+    GROQ_API_KEY_ENV,
+    LLM_API_KEY_ENV,
+    LLM_BASE_URL_ENV,
+    LLM_MODEL_ENV,
+)
 
 
 def _get_client() -> OpenAI:
     """Create an OpenAI-compatible client based on the configured provider."""
-    provider = os.getenv("LLM_API_KEY")
-
-    if provider is None:
+    provider_api_key = os.getenv(LLM_API_KEY_ENV)
+    if provider_api_key is None:
         return OpenAI(
-            api_key=os.getenv("GROQ_API_KEY"),
-            base_url="https://api.groq.com/openai/v1",
+            api_key=os.getenv(GROQ_API_KEY_ENV),
+            base_url=DEFAULT_LLM_BASE_URL,
         )
 
-    # openai_compatible — DeepSeek, etc.
     return OpenAI(
-        api_key=os.getenv("LLM_API_KEY") or os.getenv("GROQ_API_KEY"),
-        base_url=os.getenv("LLM_BASE_URL", "https://api.groq.com/openai/v1"),
+        api_key=provider_api_key or os.getenv(GROQ_API_KEY_ENV),
+        base_url=os.getenv(LLM_BASE_URL_ENV, DEFAULT_LLM_BASE_URL),
     )
 
 
 def _get_model() -> str:
-    """Return the model name for the configured provider.
+    """Return the configured model name or the provider-specific default."""
+    explicit_model = os.getenv(LLM_MODEL_ENV)
+    if explicit_model:
+        return explicit_model
 
-    The default model depends on which provider is active,
-    detected the same way as _get_client() — by checking LLM_API_KEY.
-    """
-    explicit = os.getenv("LLM_MODEL")
-    if explicit:
-        return explicit
-
-    # No LLM_API_KEY → Groq mode (backward compatible)
-    if os.getenv("LLM_API_KEY") is None:
-        return "llama-3.3-70b-versatile"
-
-    return "deepseek-v4-flash"
+    if os.getenv(LLM_API_KEY_ENV) is None:
+        return DEFAULT_GROQ_MODEL
+    return DEFAULT_OPENAI_COMPATIBLE_MODEL
 
 
 def generate_response(user_query: str, context: str, history: str = "") -> str:
@@ -75,13 +75,12 @@ STYLE:
     try:
         client = _get_client()
         model = _get_model()
-
         response = client.chat.completions.create(
             model=model,
             messages=[
                 {
                     "role": "system",
-                    "content": system_prompt
+                    "content": system_prompt,
                 },
                 {
                     "role": "user",
@@ -92,21 +91,23 @@ User question:
 Code context:
 {context}
 
+Conversation history:
+{history}
+
 INSTRUCTIONS:
 - Answer strictly from code
 - Do NOT add explanation unless asked
 - Keep output clean and structured
-"""
-                }
-            ]
+""",
+                },
+            ],
         )
 
-        if response.choices and len(response.choices) > 0:
+        if response.choices:
             return response.choices[0].message.content
-        else:
-            print("Unexpected response:", response)
-            return "I could not process the response."
 
-    except Exception as e:
-        print("LLM ERROR:", e)
+        print("Unexpected response:", response)
+        return "I could not process the response."
+    except Exception as error:
+        print("LLM ERROR:", error)
         return "Sorry, I ran into an error while processing your request."
