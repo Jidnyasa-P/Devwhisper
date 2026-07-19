@@ -1,153 +1,170 @@
 # 🎙️ DevWhisper — Voice-Native Developer Experience Agent
 
-
+![License](https://img.shields.io/github/license/Aharshi3614/Devwhisper)
+![Python](https://img.shields.io/badge/python-3.10%2B-blue)
+![FastAPI](https://img.shields.io/badge/framework-FastAPI-009688)
+![Open Issues](https://img.shields.io/github/issues/Aharshi3614/Devwhisper)
+<!-- Add a CI build badge once a workflow exists, e.g.: -->
+<!-- ![Build](https://img.shields.io/github/actions/workflow/status/Aharshi3614/Devwhisper/ci.yml) -->
 
 DevWhisper is a voice-first AI agent built for developers. Instead of stopping to search through files or documentation, you just ask out loud — and it answers based on your actual codebase.
 
-
-
 ---
-
-
 
 ## 🚨 The Problem
 
-
-
 Developers lose focus constantly. Switching between your editor, a browser, Stack Overflow, and documentation breaks the flow of thinking. Most AI tools still require you to type, copy-paste code, and wait.
-
-
 
 DevWhisper lets you stay in flow. Ask a question with your voice, get an answer in seconds, and keep coding.
 
-
-
 ---
-
-
 
 ## ✨ What It Does
 
-
-
 🎤 You ask a question about your code
-
 🔍 It searches your actual codebase semantically
-
 🔊 It responds in plain spoken English, like a senior dev sitting next to you
 
-
-
 Example questions that work:
-
 - "What does the preprocess function do?"
-
 - "Where is the model saved after training?"
-
 - "How do I debug a KeyError in the pipeline?"
 
-
-
 ---
-
-
 
 ## 🏗️ Architecture
 
-
-
+```
 Developer speaks
-
-↓
-
+      ↓
 Vapi — Speech to Text
-
-↓
-
+      ↓
 FastAPI Webhook Server
-
-↓
-
+      ↓
 Qdrant Vector Search
-
-↓
-
+      ↓
 Groq LLaMA 3.3 70B
-
-↓
-
+      ↓
 FastAPI sends answer back
-
-↓
-
+      ↓
 Vapi — Text to Speech
-
-↓
-
+      ↓
 Developer hears the response
-
-
-
-\---
-
-
-
-## 🛠️ Tech Stack
-
-
-
-- 🎙️ Vapi — handles voice input and output
-
-- 🗄️ Qdrant — stores and searches code as vectors
-
-- 🤖 Groq with LLaMA 3.3 70B — generates the response
-
-- ⚡ FastAPI — receives webhooks from Vapi and orchestrates everything
-
-
+```
 
 ---
 
+## 🛠️ Tech Stack
 
+| Component | Role |
+|---|---|
+| 🎙️ [Vapi](https://vapi.ai/) | Handles voice input and output |
+| 🗄️ [Qdrant](https://qdrant.tech/) | Stores and searches code as vectors |
+| 🤖 [Groq](https://groq.com/) (LLaMA 3.3 70B) | Generates the response |
+| ⚡ [FastAPI](https://fastapi.tiangolo.com/) | Receives webhooks from Vapi and orchestrates everything |
 
-## 🚀 How To Run It
+---
 
+## 🚀 Getting Started
 
+### Prerequisites
 
-1. Clone this repo
+- Python 3.10+
+- API keys for:
+  - [Groq](https://console.groq.com/)
+  - [Vapi](https://vapi.ai/)
+  - [Qdrant](https://cloud.qdrant.io/) (cluster URL + API key)
+- [ngrok](https://ngrok.com/) (or similar tunneling tool) to expose your local server to Vapi
 
-2. Install dependencies: `pip install -r requirements.txt`
+### Setup
 
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/Aharshi3614/Devwhisper.git
+   cd Devwhisper
+   ```
+
+2. **Create and activate a virtual environment**
+   ```bash
+   python -m venv venv
+   source venv/bin/activate   # On Windows: venv\Scripts\activate
+   ```
+
+3. **Install dependencies**
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+4. **Configure environment variables**
+
+   Copy the example file and fill in your keys:
+   ```bash
+   cp .env.example .env
+   ```
+   Then edit `.env`:
+   ```
+   QDRANT_URL=your_qdrant_cluster_url
+   QDRANT_API_KEY=your_qdrant_api_key
+   GROQ_API_KEY=your_groq_api_key
+   ```
+
+5. **Add your codebase**
+
+   Drop the Python files you want DevWhisper to answer questions about into the `sample_codebase/` folder.
+
+6. **Index your codebase**
+   ```bash
+   python indexer.py
+   ```
+
+7. **Start the server**
+   ```bash
+   uvicorn main:app --reload --port 8000
+   ```
 3. Create a `.env` file in the root folder:`cp ./.env.example ./.env`
 
-4. Add your Python files to the `sample\_codebase` folder
+8. **Expose it publicly**
+   ```bash
+   ngrok http 8000
+   ```
 
-5. Index your codebase: `python indexer.py`
+9. **Connect Vapi**
 
-6. Start the server: `uvicorn main:app --reload --port 8000`
+   Update your Vapi tool's Server URL to your ngrok URL plus `/webhook`.
 
-7. Expose publicly: `ngrok http 8000`
+### ✅ Verify it's working
 
-8. Update Vapi tool Server URL with your ngrok URL plus `/webhook`
+With the server running, confirm it responds:
+```bash
+curl http://localhost:8000/health
+```
+You should get a response back confirming the server is live. You can also run the standalone test client (see below) to check the full pipeline end-to-end without needing a live voice call.
 
 ---
 
 ## 🐳 Run with Docker
 
-1. Build the Docker image: `docker build -t devwhisper .`
+1. Build the image:
+   ```bash
+   docker build -t devwhisper .
+   ```
 2. Create a `.env` file with your API keys (same as above).
-3. Run the container: `docker run -p 8000:8000 --env-file .env devwhisper`
-4. Expose publicly using ngrok and update your Vapi tool Server URL.
+3. Run the container:
+   ```bash
+   docker run -p 8000:8000 --env-file .env devwhisper
+   ```
+4. Expose it with ngrok and update your Vapi tool's Server URL as in the steps above.
 
 ---
 
-
-
 ## 🧪 Testing Locally
 
-You can test DevWhisper's conversation flow directly from your terminal without using Vapi or making voice calls by using the standalone test client. This is useful for local development and debugging.
+You can test DevWhisper's conversation flow directly from your terminal — without using Vapi or making a voice call — using the standalone test client. This is useful for local development and debugging.
 
-1. Ensure your FastAPI server is running: `uvicorn main:app --reload --port 8000`
+1. Make sure your FastAPI server is running:
+   ```bash
+   uvicorn main:app --reload --port 8000
+   ```
 2. Run the test client in interactive mode:
    ```bash
    python test_client.py
@@ -161,33 +178,28 @@ You can test DevWhisper's conversation flow directly from your terminal without 
 
 ## 📁 Project Structure
 
-
-
-- `main.py` — FastAPI webhook server, handles all Vapi events
-
-- `indexer.py` — chunks your code files and uploads them to Qdrant
-
-- `retriever.py` — takes a query and finds the most relevant code chunks
-
-- `llm.py` — sends the query and context to Groq and returns the answer
-
-- `sample\_codebase/` — put your own Python project files here
-
-
+| File / Folder | Purpose |
+|---|---|
+| `main.py` | FastAPI webhook server, handles all Vapi events |
+| `indexer.py` | Chunks your code files and uploads them to Qdrant |
+| `retriever.py` | Takes a query and finds the most relevant code chunks |
+| `llm.py` | Sends the query and context to Groq and returns the answer |
+| `test_client.py` | Standalone CLI client for testing without Vapi |
+| `sample_codebase/` | Put your own Python project files here |
 
 ---
-
-
 
 ## ⚠️ Notes
 
-
-
-- The ngrok URL changes every time you restart it. Remember to update the Server URL in your Vapi tool settings each time.
-
-- The `.env` file is not included in this repo for security. You need to create your own with the keys above.
-
-
+- The ngrok URL changes every time you restart it — remember to update the Server URL in your Vapi tool settings each time.
+- The `.env` file is **not** included in this repo for security. Create your own using `.env.example` as a starting point.
 
 ---
 
+## 🤝 Contributing
+
+Contributions are welcome! Check out the [open issues](https://github.com/Aharshi3614/Devwhisper/issues) — issues labeled `good first issue` are a great place to start.
+
+## 📄 License
+
+See the [LICENSE](./LICENSE) file for details.
