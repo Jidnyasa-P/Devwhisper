@@ -44,6 +44,7 @@ def test_retrieve_formats_ranked_results(monkeypatch):
         collection_name="devwhisper",
         query=[0.1, 0.2, 0.3],
         limit=2,
+        score_threshold=0.0
     )
     assert "Result 1:" in context
     assert "File: pipeline.py" in context
