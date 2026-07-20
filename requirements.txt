@@ -1,7 +1,7 @@
-fastapi
-uvicorn
-qdrant-client
-sentence-transformers
-python-dotenv
-openai
-requests
+fastapi==0.139.2
+uvicorn==0.51.0
+qdrant-client==1.18.0
+sentence-transformers==5.6.0
+python-dotenv==1.2.2
+openai==2.46.0
+requests==2.34.2
