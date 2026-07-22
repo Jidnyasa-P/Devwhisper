@@ -29,6 +29,7 @@
   inset: 0;
   height: 100%;
   transform: translateX(-100%);
+  visibility: hidden;
 }
 
 .theme__icon,
@@ -159,6 +160,7 @@
 
 .theme__toggle:checked ~ .theme__fill {
   transform: translateX(0);
+  visibility: visible;
 }
 
 .theme__toggle:checked ~ .theme__icon .theme__icon-part:nth-child(1) {

@@ -304,14 +304,16 @@ def admin_list_sessions(x_admin_secret: str | None = Header(default=None, alias=
         "sessions": sessions,
     }
 
-@app.get("/history/{session_id}")
-def get_history(session_id: str):
-    """Endpoint to retrieve conversation history for a given session."""
-    history = get_memory(session_id)
-    return {"session_id": session_id, "history": history}
-
 @app.get("/history")
-def get_all_session_ids():
-    """Endpoint to retrieve all session IDs."""
+def get_history(session_id: str | None = None):
+    """
+    Retrieve conversation history.
+
+    - GET /history          → returns all session IDs
+    - GET /history?session_id=xxx → returns history for that session
+    """
+    if session_id:
+        history = get_memory(session_id)
+        return {"session_id": session_id, "history": history}
     all_session_ids = list(conversation_sessions.keys())
     return {"session_ids": all_session_ids}
